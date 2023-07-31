@@ -4,7 +4,7 @@ log_file="/project/upload_csv_to_s3.log"
 
 # Function to log messages to a log file
 log_message() {
-    local log_text=$1
+    local log_text="$1"
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $log_text" >> "$log_file"
 }
 
@@ -28,9 +28,9 @@ install_packages() {
 download_zip_file() {
     local project_dir="/project"
     log_message "Downloading the zip file"
-    mkdir -p "$project_dir"
+    mkdir "$project_dir"
     cd "$project_dir" || exit 1
-    wget -q https://github.com/dogukannulu/send_data_to_aws_services/csv_to_s3/raw/main/csv_to_s3.zip
+    wget -q https://github.com/dogukannulu/send_data_to_aws_services/raw/main/csv_to_s3/csv_to_s3.zip
 }
 
 # Function to unzip the files
@@ -49,9 +49,9 @@ install_python_libraries() {
 # Function to execute the Python script
 execute_python_script() {
     local csv_to_s3_script="csv_to_s3.py"
-    local bucket_name="s3_trigger_lambda_to_rds_bucket"
+    local bucket_name="csv-to-s3-project-dogukan-ulu"
     local object_key="dirty_store_transactions/dirty_store_transactions.csv"
-    local data_url="https://raw.githubusercontent.com/dogukannulu/send_data_to_aws_services/csv_to_s3/master/dirty_store_transactions.csv"
+    local data_url="https://raw.githubusercontent.com/dogukannulu/send_data_to_aws_services/main/csv_to_s3/dirty_store_transactions.csv"
     
     log_message "Executing the Python script"
     chmod +x "$csv_to_s3_script"
