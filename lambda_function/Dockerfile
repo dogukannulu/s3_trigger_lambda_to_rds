@@ -5,7 +5,7 @@ FROM public.ecr.aws/lambda/python:3.8
 COPY requirements.txt ./
 
 # installing dependencies
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r ./requirements.txt
 
 # Copy function code to container
 COPY lambda_function.py ./
