@@ -1,10 +1,12 @@
 import io
+import os
+import re
 import logging
 import pandas as pd
 import boto3
-import re
-from datetime import datetime
+import pymysql
 from sqlalchemy import create_engine
+from botocore.exceptions import ClientError
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -12,12 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class GlobalVariables:
-    bucket_name = 'csv-to-s3-project-dogukan-ulu'
-    bucket_key = 'dirty_store_transactions/dirty_store_transactions.csv'
-    database_name = '<database_name>'
-    database_username = '<user_name>'
-    database_password = '<password>'
-    database_endpoint = '<database_endpoint>'
+    database_name = os.getenv('database_name')
+    database_username = os.getenv('database_username')
+    database_password = os.getenv('database_password')
+    database_endpoint = os.getenv('database_endpoint')
     database_port = 3306
     s3_client = boto3.client('s3')
     database_uri = f"mysql+pymysql://{database_username}:{database_password}@{database_endpoint}:{database_port}/{database_name}"
@@ -41,23 +41,19 @@ class ModifyColumns:
         return float(string_without_dollar)
 
 
-def load_df_from_s3(bucket, prefix, key=None, index_col=None, usecols=None, sep=','):
+def load_df_from_s3(bucket_name, key):
     ''' Read a csv from a s3 bucket & load into pandas dataframe'''
-    s3_resource = boto3.resource('s3')
+    s3 = GlobalVariables.s3_client
     try:
-        logging.info(f"Loading {bucket}, {prefix}, {key}")
-        bucket = s3_resource.Bucket(bucket)
-        prefix_objs = bucket.objects.filter(Prefix=prefix)
-        all_data = []
-        for obj in prefix_objs:
-            key = obj.key
-            body = obj.get()['Body'].read()
-            temp_df = pd.read_csv(io.BytesIO(body), encoding='utf8', index_col=index_col, sep=sep)
-            all_data.append(temp_df)
-        return pd.concat(all_data)
-    except Exception as e:
-        logger.exception(f"Error loading data from S3: {e}")
-        raise
+        get_response = s3.get_object(Bucket=bucket_name, Key=key)
+        logger.info("Object retrieved from S3 bucket successfully")
+    except ClientError as e:
+        logger.error("S3 object cannot be retrieved:", e)
+    
+    file_content = get_response['Body'].read()
+    df = pd.read_csv(io.BytesIO(file_content)) # necessary transformation from S3 to pandas
+
+    return df
 
 
 def data_cleaner(df):
@@ -83,7 +79,7 @@ def upload_dataframe_into_rds(df):
         raise
 
     try:
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        df.to_sql(table_name, con=engine, if_exists='append', index=False)
         logger.info(f'Dataframe uploaded into {table_name} successfully')
         uploaded_df = pd.read_sql(sql_query, engine)
         logger.info('\n' + uploaded_df.head().to_string(index=False))
@@ -96,7 +92,7 @@ def lambda_handler(event, context):
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
 
-    df = load_df_from_s3(bucket=bucket, prefix=key, sep=',')
+    df = load_df_from_s3(bucket_name=bucket, key=key)
 
     df_final = data_cleaner(df)
 

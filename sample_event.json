@@ -1,0 +1,28 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-east-1",
+            "eventTime": "2023-08-02T12:34:56.789Z",
+            "eventName": "ObjectCreated:Put",
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "example-event-config-id",
+                "bucket": {
+                    "name": "your-s3-bucket-name",
+                    "ownerIdentity": {
+                        "principalId": "EXAMPLE"
+                    },
+                    "arn": "arn:aws:s3:::your-s3-bucket-name"
+                },
+                "object": {
+                    "key": "path/to/your/object/file.txt",
+                    "size": 1024,
+                    "eTag": "example-object-etag",
+                    "sequencer": "example-sequencer"
+                }
+            }
+        }
+    ]
+}
