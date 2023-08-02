@@ -1,6 +1,6 @@
 # Overview
 
+![image](https://github.com/dogukannulu/s3_trigger_lambda_to_rds/assets/91257958/c22adbaa-e73d-4e05-b2a9-c7578876ed38)
 
-![image](https://github.com/dogukannulu/s3_trigger_lambda_to_rds/assets/91257958/0df8fef3-53de-4cf7-b162-8b777cc646b7)
 
 
