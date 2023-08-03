@@ -48,11 +48,11 @@ def load_df_from_s3(bucket_name, key):
         get_response = s3.get_object(Bucket=bucket_name, Key=key)
         logger.info("Object retrieved from S3 bucket successfully")
     except ClientError as e:
-        logger.error("S3 object cannot be retrieved:", e)
+        logger.error(f"S3 object cannot be retrieved: {e}")
     
     file_content = get_response['Body'].read()
     df = pd.read_csv(io.BytesIO(file_content)) # necessary transformation from S3 to pandas
-
+    df = df[:50]
     return df
 
 
@@ -75,22 +75,25 @@ def upload_dataframe_into_rds(df):
         engine = create_engine(database_uri)
         logger.info('Database connection successful')
     except Exception as e:
-        logger.error('Database connection unsuccessful:', e)
+        logger.error(f'Database connection unsuccessful: {e}')
         raise
 
     try:
-        df.to_sql(table_name, con=engine, if_exists='append', index=False)
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         logger.info(f'Dataframe uploaded into {table_name} successfully')
         uploaded_df = pd.read_sql(sql_query, engine)
         logger.info('\n' + uploaded_df.head().to_string(index=False))
     except Exception as e:
-        logger.error('Error happened while uploading dataframe into database:', e)
+        logger.error(f'Error happened while uploading dataframe into database: {e}')
         raise
 
 
 def lambda_handler(event, context):
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
+
+    print(bucket)
+    print(key)
 
     df = load_df_from_s3(bucket_name=bucket, key=key)
 
